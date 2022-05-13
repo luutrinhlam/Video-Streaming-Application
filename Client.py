@@ -211,7 +211,7 @@ class Client:
 			
 			# Close the RTSP socket upon requesting Teardown
 			if self.requestSent == self.TEARDOWN:
-				self.rtspSocket.shutdown(socket.SHUT_RDWR)
+				# self.rtspSocket.shutdown(socket.SHUT_RDWR)
 				self.rtspSocket.close()
 				break
 	
@@ -252,9 +252,21 @@ class Client:
 						self.rtpSocket.close()
 						self.playEvent.set()
 
+						# self.rtspSeq = 0
 						for i in os.listdir():
 							if i.find(CACHE_FILE_NAME) == 0:
 								os.remove(i)
+								self.rtspSeq = 0
+
+						self.sessionId = 0
+						self.requestSent = -1
+						self.teardownAcked = 0
+						self.frameNbr = 0
+						self.counter = 0
+						self.connectToServer()
+						self.RtpPortOpen =False
+						self.label.pack_forget()
+						self.label.image = ''
 	
 	def openRtpPort(self):
 		"""Open RTP socket binded to a specified port."""

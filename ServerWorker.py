@@ -103,7 +103,7 @@ class ServerWorker:
 			self.clientInfo['event'].set()
 			
 			self.replyRtsp(self.OK_200, seq[1])
-			
+			self.state = self.INIT
 			# Close the RTP socket
 			self.clientInfo['rtpSocket'].close()
 			
