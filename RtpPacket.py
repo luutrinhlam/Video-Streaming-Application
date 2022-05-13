@@ -19,9 +19,6 @@ class RtpPacket:
 		
 		# header[0] = ...
 		# ...
-		
-		# Get the payload from the argument
-		# self.payload = ...
 		for i in range(HEADER_SIZE):
 			header[i] = 0
 
@@ -53,6 +50,7 @@ class RtpPacket:
 		# self.payload = ...
 		self.payload = payload
 		
+
 		
 	def decode(self, byteStream):
 		"""Decode the RTP packet."""
