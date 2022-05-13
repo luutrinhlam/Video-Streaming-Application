@@ -35,6 +35,9 @@ class Client:
 		self.connectToServer()
 		self.frameNbr = 0	# detect loss in packet and maybe reordering packet
 		self.packetLost = 0 # number of packets lost
+
+		self.RtpPortOpen = False # check if the rtp port is open or not
+
 		
 	# THIS GUI IS JUST FOR REFERENCE ONLY, STUDENTS HAVE TO CREATE THEIR OWN GUI 	
 	def createWidgets(self):
@@ -230,7 +233,7 @@ class Client:
 					if self.requestSent == self.SETUP:
 						self.state = self.READY
 						# Open RTP port.
-						self.openRtpPort() 
+						if not self.RtpPortOpen: self.openRtpPort() 
 					elif self.requestSent == self.PLAY:
 						self.state = self.PLAYING
 						self.playEvent = threading.Event() # tạo ra một kênh kết nối chờ đợi 1 event giữa các thread
@@ -245,6 +248,13 @@ class Client:
 						self.state = self.INIT
 						# Flag the teardownAcked to close the socket.
 						self.teardownAcked = 1
+						self.rtpSocket.shutdown(socket.SHUT_RDWR)
+						self.rtpSocket.close()
+						self.playEvent.set()
+
+						for i in os.listdir():
+							if i.find(CACHE_FILE_NAME) == 0:
+								os.remove(i)
 	
 	def openRtpPort(self):
 		"""Open RTP socket binded to a specified port."""
@@ -256,6 +266,7 @@ class Client:
 		
 		# Set the timeout value of the socket to 0.5sec
 		# ...
+		self.RtpPortOpen = True
 		self.rtpSocket.settimeout(0.5)
 		self.rtpSocket.bind(('', self.rtpPort))
 
