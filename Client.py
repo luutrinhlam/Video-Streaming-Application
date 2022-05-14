@@ -36,6 +36,7 @@ class Client:
 		self.frameNbr = 0	# detect loss in packet and maybe reordering packet
 		self.packetLost = 0 # number of packets lost
 
+		
 		self.RtpPortOpen = False # check if the rtp port is open or not
 
 		
