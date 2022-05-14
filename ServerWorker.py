@@ -63,6 +63,7 @@ class ServerWorker:
 				
 				try:
 					self.clientInfo['videoStream'] = VideoStream(filename)
+					self.totalFrame = int(self.clientInfo['videoStream'].totalFrameNum)
 					self.state = self.READY
 				except IOError:
 					self.replyRtsp(self.FILE_NOT_FOUND_404, seq[1])
@@ -71,7 +72,7 @@ class ServerWorker:
 				self.clientInfo['session'] = randint(100000, 999999)
 				
 				# Send RTSP reply
-				self.replyRtsp(self.OK_200, seq[1])
+				self.replyRtsp(self.OK_200, seq[1], requestType)
 				
 				# Get the RTP/UDP port from the last line
 				self.clientInfo['rtpPort'] = request[2].split(' ')[3]
@@ -117,6 +118,18 @@ class ServerWorker:
 		elif requestType == self.DESCRIBE:
 			print("processing DESCRIBE\n")
 			self.replyDescibe(self.OK_200,seq[1])	
+
+		elif requestType == self.CHANGEFRAME:
+			print("processing CHANGEFRAME")
+			self.changeFrameNbr (request[3].split(' ')[1])
+
+		elif requestType == self.CHANGESPEED:
+			print("processing CHANGESPEED\n")
+			self.SPD = self.TPF * (2 - float(request[3].split(' ')[1]))
+
+	def changeFrameNbr (self, frameNum):
+		print ("Change to Frame " + str(frameNum) + '\n')
+		self.clientInfo['videoStream'].setFrame(frameNum)
 			
 	def sendRtp(self):
 		"""Send RTP packets over UDP."""
@@ -134,6 +147,11 @@ class ServerWorker:
 					address = self.clientInfo['rtspSocket'][1][0]
 					port = int(self.clientInfo['rtpPort'])
 					self.clientInfo['rtpSocket'].sendto(self.makeRtp(data, frameNumber),(address,port))
+					if frameNumber == self.totalFrame:
+						print ("End of movie.")
+						self.clientInfo['videoStream'] = VideoStream(self.filename)
+						#self.clientInfo["rtpSocket"].close()
+						break 
 				except:
 					print("Connection Error")
 					print('-'*60)
@@ -157,11 +175,17 @@ class ServerWorker:
 		
 		return rtpPacket.getPacket()
 		
-	def replyRtsp(self, code, seq):
+	def replyRtsp(self, code, seq, requestType =''):
 		"""Send RTSP reply to the client."""
 		if code == self.OK_200:
 			#print("200 OK")
-			reply = 'RTSP/1.0 200 OK\nCSeq: ' + seq + '\nSession: ' + str(self.clientInfo['session'])
+			# reply = 'RTSP/1.0 200 OK\nCSeq: ' + seq + '\nSession: ' + str(self.clientInfo['session'])
+			if requestType == self.SETUP:
+				reply = 'RTSP/1.0 200 OK\nCSeq: ' + seq + '\nSession: ' + str(self.clientInfo['session']) \
+				+ '\nTotalFrameofVideo: ' + str(self.totalFrame) \
+				+ '\nTimeperFrame: ' + str(self.TPF)
+			else:
+				reply = 'RTSP/1.0 200 OK\nCSeq: ' + seq + '\nSession: ' + str(self.clientInfo['session'])
 			connSocket = self.clientInfo['rtspSocket'][0]
 			connSocket.send(reply.encode())
 		
