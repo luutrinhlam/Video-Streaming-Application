@@ -22,6 +22,9 @@ class ServerWorker:
 	FILE_NOT_FOUND_404 = 1
 	CON_ERR_500 = 2
 	
+	Played = 0
+	TPF = 0.05
+	SPD = 0.05
 	clientInfo = {}
 	
 	def __init__(self, clientInfo):
@@ -109,6 +112,11 @@ class ServerWorker:
 			self.state = self.INIT
 			# Close the RTP socket
 			self.clientInfo['rtpSocket'].close()
+
+		# Process DESCRIBE request
+		elif requestType == self.DESCRIBE:
+			print("processing DESCRIBE\n")
+			self.replyDescibe(self.OK_200,seq[1])	
 			
 	def sendRtp(self):
 		"""Send RTP packets over UDP."""
@@ -158,6 +166,24 @@ class ServerWorker:
 			connSocket.send(reply.encode())
 		
 		# Error messages
+		elif code == self.FILE_NOT_FOUND_404:
+			print("404 NOT FOUND")
+		elif code == self.CON_ERR_500:
+			print("500 CONNECTION ERROR")
+
+	def describe(self):
+		seq1 = "\nFPS: " + str(1/self.TPF) + ", v = 0\nm = video " + str(self.clientInfo['rtpPort']) + " RTP/AVP 26\na=control:streamid=" \
+			 + str(self.clientInfo['session']) + "\na=mimetype:string;\"video/Mjpeg\"\n-----"
+		seq2 = "\nEncoding: UTF-8" + "\nDescribe-Base: " + str(self.clientInfo['videoStream'].filename) + "\nDescribe-Length: " \
+			 + str(len(seq1)) + "\n"
+		return seq1 + seq2
+
+	def replyDescibe(self,code,seq):
+		des = self.describe()
+		if code == self.OK_200:
+			reply = "RTSP/1.0 200 OK\nCSeq: " + seq + "\nSession: " + str(self.clientInfo['session']) + "\n" + des
+			connSocket = self.clientInfo['rtspSocket'][0]
+			connSocket.send(reply.encode())
 		elif code == self.FILE_NOT_FOUND_404:
 			print("404 NOT FOUND")
 		elif code == self.CON_ERR_500:
